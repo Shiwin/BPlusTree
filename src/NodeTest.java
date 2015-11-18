@@ -54,7 +54,7 @@ public class NodeTest {
     @Test
     public void testFind() throws Exception {
         RandomAccessFile ra = new RandomAccessFile("text.txt","r");
-        Node q = Node.readNode(4,ra,2);
+        Node q = node.readNode(ra,2);
         BPTree tree = new BPTree(q,ra);
 
         Node n = tree.find("2");
