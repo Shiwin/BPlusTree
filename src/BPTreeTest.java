@@ -5,6 +5,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.RandomAccessFile;
 import java.util.Collection;
+import java.util.concurrent.SynchronousQueue;
 
 import static org.junit.Assert.*;
 
@@ -37,10 +38,12 @@ public class BPTreeTest {
         tree.insert("45","45");
         tree.insert("545","545");
         tree.insert("8","8");
-//        tree.insert("654","654");
-  //      tree.insert("335","335");
+        tree.insert("654","654");
+        //tree.insert("335","335");
 
         tree.traverse();
+
+     //   System.out.println(tree.listKeys());
     }
 
 

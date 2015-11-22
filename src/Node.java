@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * B+ tree node.
@@ -23,10 +24,17 @@ public class Node {
         this.isFull = false;
         this.isLeaf = true;
         this.deg = deg;
-        this.values = new ArrayList<>();
-        this.keys = new ArrayList<>();
-        this.pointers = new ArrayList<>();
         this.position = offset;
+        this.values = new ArrayList<>(deg);
+        this.keys = new ArrayList<>(deg);
+        for (int i = 0; i < deg; i++) {
+            values.add("");
+            keys.add("");
+        }
+        this.pointers = new ArrayList<>(deg+1);
+        for (int i = 0; i < deg + 1; i++) {
+            pointers.add(-1l);
+        }
     }
 
 
@@ -56,36 +64,58 @@ public class Node {
     }
 
     public Node getRelative(String key, RandomAccessFile ra){
+//        assert pointers.size()<=keys.size()+1;
         for (int i = 0; i < keys.size(); i++) {
-            if (keys.get(i).compareTo(key)>=0){//keys.get(i)>=value
+            if (keys.get(i).compareTo(key)<=0){//keys.get(i)>=value
                 return readNode(ra,pointers.get(i));
             }
         }
         return readNode(ra,pointers.get(keys.size()));
     }
 
-    public Integer addChild(Node n,long position){
-        if (keys.size()==0){
-            pointers.add(position);
-            return 0;
-        }
-        String minKey = n.minKey();
-        if (minKey.compareTo(this.minKey())<=0){
-            pointers.add(0,position);
-            return 0;
-        }
-        for (int i = 1; i < keys.size(); i++) {
-            if (minKey.compareTo(this.keys.get(i))<=0&&minKey.compareTo(this.keys.get(i-1))>=0){
-                pointers.add(i,position);
-                return i;
+    public Integer addRelated(Node n){
+        String minKeyN = n.minKey();
+        String maxKeyN = n.maxKey();
+        String minKey = minKey();
+        String maxKey = maxKey();
+        if (!this.isLeaf()){
+            if (minKey.compareTo(maxKeyN)<=0){//minKey>=n.maxKeyN
+                pointers.set(0,n.position);
+                return 0;
+            }else if (maxKey.compareTo(minKeyN)<=0) {//maxKeyN
+                pointers.set(1,n.position);
+                return 1;
+            }else {
+                throw new Error(String.format("Intersection of nodes %n%s%n%s%n",this,n));
             }
+        }else {
+            if (minKeyN.compareTo(minKey) <= 0) {
+                pointers.add(0, n.position);
+                return 0;
+            }
+            for (int i = 1; i < keys.size(); i++) {
+                if (minKeyN.compareTo(this.keys.get(i)) <= 0 && minKeyN.compareTo(this.keys.get(i - 1)) >= 0) {
+                    pointers.add(i, n.position);
+                    return i;
+                }
+            }
+            pointers.add(n.position);
+            return pointers.size() - 1;
         }
-        pointers.add(position);
-        return pointers.size()-1;
     }
 
     public String minKey(){
         return keys.get(0);
+    }
+    public String maxKey(){
+        String maxKey = keys.get(0);
+        for (int i = 1;i < keys.size(); i++) {
+            if (keys.get(i).equals("")){
+                return maxKey;
+            }
+            maxKey = keys.get(i);
+        }
+        return keys.get(keys.size()-1);
     }
 
     public static Node readNode(int deg,RandomAccessFile ra,long possition){
@@ -116,7 +146,7 @@ public class Node {
                 }
             }
 
-            for (int i = 0; i <= deg; i++) {
+            for (int i = 0; i < deg; i++) {
                 Long p = ra.readLong();
                 n.pointers.add(p);
             }
@@ -173,15 +203,16 @@ public class Node {
             values.add(value);
         }else {
             for (int i = 0; i < keys.size() ; i++) {
-                if (keys.get(i).compareTo(key) >= 0) {//keys.get(i) >= value
-                    keys.add(i, key);
-                    values.add(i, value);
-                    resetFull();
-                    return;
+                if (keys.get(i).equals("")){
+                    keys.set(i,key);
+                    values.set(i,value);
+                    break;
+                }else if (keys.get(i).compareTo(key) >= 0) {//keys.get(i) >= value
+                    keys.set(i, key);
+                    values.set(i, value);
+                    break;
                 }
             }
-            keys.add(key);
-            values.add(value);
         }
         this.resetFull();
     }

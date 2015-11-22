@@ -67,37 +67,43 @@ public class BPTree {
      * @param nodes
      */
     private void split(Node node,LinkedList<Node> nodes){
-        Node parent;
-        if (!nodes.isEmpty()){
-            parent = nodes.pollFirst();
-        }else {
-            parent = new Node(degree,nextOffset);
-            parent.setLeaf(false);
-            nextOffset();
-            parent.pointers.add(node.position);
-            root = parent;
-        }
+
+        //new node
         Node newNode = new Node(root.deg,nextOffset);
         nextOffset();
 
+        //move pointer to previous node if exists
         if (!node.pointers.isEmpty()) {
             long privPointer = node.pointers.remove(0);
             newNode.pointers.add(privPointer);
+        }else {//set non pointer value
+            newNode.pointers.add(-1l);
         }
 
+        //
+        newNode.pointers.add(node.position);
+        node.pointers.add(newNode.position);
+
+        //move values from node to new node
         String moveValue =  node.values.remove(0);
         String moveKey = node.keys.remove(0);
-
         newNode.keys.add(moveKey);
         newNode.values.add(moveValue);
 
-
-        if (parent.pointers.isEmpty()){
-            parent.pointers.add(newNode.position);
+        Node parent;
+        if (!nodes.isEmpty()){//get parent from list
+            parent = nodes.pollFirst();
             parent.keys.add(node.keys.get(0));
-        }else {
-            parent.pointers.add(0, newNode.position);
-            parent.keys.add(0,node.keys.get(0));
+            parent.addRelated(newNode);
+            parent.addRelated(node);
+        }else {//create parent if list is empty(create new root)
+            parent = new Node(degree,nextOffset);
+            parent.setLeaf(false);
+            nextOffset();
+            parent.pointers.add(newNode.position);
+            parent.pointers.add(node.position);
+            parent.keys.add(node.keys.get(0));
+            root = parent;
         }
 
         parent.writeNode(raf);
@@ -151,6 +157,24 @@ public class BPTree {
                 traverse(n);
             }
         }
+    }
+
+    protected String listKeys(){
+        Node leaf = root;
+        while (!leaf.isLeaf()){
+            leaf = Node.readNode(leaf.deg,raf,leaf.pointers.get(0));
+        }
+        StringBuilder sb = new StringBuilder();
+        leaf.keys.forEach(n->{sb.append(n);
+            sb.append(" ");});
+        long pointer = leaf.pointers.get(1);
+        while (pointer!=-1){
+            leaf = Node.readNode(leaf.deg,raf,pointer);
+            leaf.keys.forEach(n->{sb.append(n);
+            sb.append(" ");});
+            pointer = leaf.pointers.get(1);
+        }
+        return sb.toString();
     }
 }
 

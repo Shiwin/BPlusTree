@@ -62,7 +62,27 @@ public class NodeTest {
         assertEquals(n.get("2"), "0");
         assertEquals("1",n.get("3"));
         assertEquals(null,n.get("1"));
+    }
 
+    @Test
+    public void testAddRelation() throws Exception {
+        Node left = new Node(4,502);
 
+        node.insert("f","10");
+        node.insert("g","11");
+        node.insert("h","11");
+        node.insert("i","11");
+
+        left.insert("a","0");
+        left.insert("b","1");
+        left.insert("c","2");
+
+        Integer i1 = node.addRelated(left);
+        Integer i2 = left.addRelated(node);
+
+        System.out.println(node);
+        System.out.println(left);
+
+        assertNotEquals(i1,i2);
     }
 }
